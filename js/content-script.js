@@ -48,7 +48,7 @@ async function showError(msg) {
 	document.body.appendChild(overlay);
 }
 
-browser.runtime.onMessage.addListener(request => {
+chrome.runtime.onMessage.addListener(request => {
 	switch (request.type) {
 		case "page-content":
 			return getPageContent();
