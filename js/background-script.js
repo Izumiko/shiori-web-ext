@@ -1,6 +1,6 @@
 async function getCurrentTab() {
     // Get active tabs in current window
-    var tabs = await browser.tabs.query({
+    var tabs = await chrome.tabs.query({
         currentWindow: true,
         active: true,
     });
@@ -11,11 +11,10 @@ async function getCurrentTab() {
 
     // Make sure URL protocol supported
     var supportedProtocols = ["https:", "http:", "ftp:", "file:"],
-        activeTab = tabs[0],
-        url = document.createElement('a');
+        activeTab = tabs[0];
 
     if (activeTab.url !== "") {
-        url.href = activeTab.url;
+        var url = new URL(activeTab.url);
         if (supportedProtocols.indexOf(url.protocol) === -1) {
             throw new Error(`protocol "${url.protocol}" is not supported`);
         }
@@ -26,7 +25,7 @@ async function getCurrentTab() {
 
 async function getPageContent(tab) {
     try {
-        var content = await browser.tabs.sendMessage(tab.id, {type: "page-content"});
+        var content = await chrome.tabs.sendMessage(tab.id, {type: "page-content"});
         return content;
     } catch {
         return {};
@@ -39,7 +38,7 @@ async function getShioriBookmarkFolder() {
     // We want to put Shiori folder in `Other bookmarks`, which id different depending on browser.
     // In Firefox, its id is `unfiled_____` while in Chrome the id is `2`.
     var parentId = "",
-        runtimeUrl = await browser.runtime.getURL("/");
+        runtimeUrl = await chrome.runtime.getURL("/");
 
     if (runtimeUrl.startsWith("moz")) {
         parentId = "unfiled_____";
@@ -50,11 +49,11 @@ async function getShioriBookmarkFolder() {
     }
 
     // Check if the parent folder already has Shiori folder
-    var children = await browser.bookmarks.getChildren(parentId),
+    var children = await chrome.bookmarks.getChildren(parentId),
         shiori = children.find(el => el.url == null && el.title === "Shiori");
 
     if (!shiori) {
-        shiori = await browser.bookmarks.create({
+        shiori = await chrome.bookmarks.create({
             title: "Shiori",
             parentId: parentId
         });
@@ -65,7 +64,7 @@ async function getShioriBookmarkFolder() {
 
 async function findLocalBookmark(url) {
     var shioriFolder = await getShioriBookmarkFolder(),
-        existingBookmarks = await browser.bookmarks.search({
+        existingBookmarks = await chrome.bookmarks.search({
             url: url,
         });
 
@@ -82,7 +81,7 @@ async function findLocalBookmark(url) {
 
 async function saveLocalBookmark(url, title) {
     var shioriFolder = await getShioriBookmarkFolder(),
-        existingBookmarks = await browser.bookmarks.search({
+        existingBookmarks = await chrome.bookmarks.search({
             url: url,
         });
 
@@ -91,7 +90,7 @@ async function saveLocalBookmark(url, title) {
     });
 
     if (idx === -1) {
-        await browser.bookmarks.create({
+        await chrome.bookmarks.create({
             url: url,
             title: title,
             parentId: shioriFolder.id,
@@ -103,20 +102,20 @@ async function saveLocalBookmark(url, title) {
 
 async function removeLocalBookmark(url) {
     var shioriFolder = await getShioriBookmarkFolder(),
-        existingBookmarks = await browser.bookmarks.search({
+        existingBookmarks = await chrome.bookmarks.search({
             url: url,
         });
 
     existingBookmarks.forEach(book => {
         if (book.parentId !== shioriFolder.id) return;
-        browser.bookmarks.remove(book.id);
+        chrome.bookmarks.remove(book.id);
     });
 
     return Promise.resolve();
 }
 
 async function getExtensionConfig() {
-    var items = await browser.storage.local.get(),
+    var items = await chrome.storage.local.get(),
         token = items.token || "",
         server = items.server || "";
 
@@ -136,7 +135,7 @@ async function getExtensionConfig() {
 
 async function openLibraries() {
     var config = await getExtensionConfig();
-    return browser.tabs.create({
+    return chrome.tabs.create({
         active: true,
         url: config.server,
     });
@@ -234,11 +233,11 @@ async function updateIcon() {
     var colourScheme = getDarkModeEnabled() ? "light" : "default";
 
     // Set initial icon
-    var runtimeUrl = await browser.runtime.getURL("/"),
+    var runtimeUrl = await chrome.runtime.getURL("/"),
         icon = {path: {
-            16: `icons/action-${colourScheme}-16.png`,
-            32: `icons/action-${colourScheme}-32.png`,
-            64: `icons/action-${colourScheme}-64.png`
+            16: `/icons/action-${colourScheme}-16.png`,
+            32: `/icons/action-${colourScheme}-32.png`,
+            64: `/icons/action-${colourScheme}-64.png`
         }};
 
     // Firefox allows using empty object as default icon.
@@ -253,17 +252,17 @@ async function updateIcon() {
             local = await findLocalBookmark(tab.url);
 
         if (local) icon.path = {
-            16: "icons/action-bookmarked-16.png",
-            32: "icons/action-bookmarked-32.png",
-            64: "icons/action-bookmarked-64.png"
+            16: "/icons/action-bookmarked-16.png",
+            32: "/icons/action-bookmarked-32.png",
+            64: "/icons/action-bookmarked-64.png"
         }
     } catch {}
 
-    return browser.browserAction.setIcon(icon);
+    return chrome.action.setIcon(icon);
 }
 
 // Define event handler
-browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     var task = Promise.resolve();
 
     switch (request.type) {
@@ -303,11 +302,11 @@ function updateActiveTab()  {
     updateIcon().catch(err => console.error(err.message));
 }
 
-browser.bookmarks.onCreated.addListener(updateActiveTab);
-browser.bookmarks.onRemoved.addListener(updateActiveTab);
-browser.tabs.onUpdated.addListener(updateActiveTab);
-browser.tabs.onActivated.addListener(updateActiveTab);
-browser.windows.onFocusChanged.addListener(updateActiveTab);
+chrome.bookmarks.onCreated.addListener(updateActiveTab);
+chrome.bookmarks.onRemoved.addListener(updateActiveTab);
+chrome.tabs.onUpdated.addListener(updateActiveTab);
+chrome.tabs.onActivated.addListener(updateActiveTab);
+chrome.windows.onFocusChanged.addListener(updateActiveTab);
 updateActiveTab();
 
 if (browser.omnibox) {

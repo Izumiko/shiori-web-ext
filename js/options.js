@@ -1,6 +1,6 @@
 // Define async function
 async function getExtensionConfig() {
-    var items = await browser.storage.local.get();
+    var items = await chrome.storage.local.get();
 
     return {
         server: items.server || "",
@@ -12,7 +12,7 @@ async function getExtensionConfig() {
 }
 
 async function saveExtensionConfig(cfg) {
-    return browser.storage.local.set(cfg);
+    return chrome.storage.local.set(cfg);
 }
 
 async function logout(server, token) {

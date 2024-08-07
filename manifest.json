@@ -1,5 +1,5 @@
 {
-    "manifest_version": 2,
+    "manifest_version": 3,
     "version": "1.6.0.1",
     "name": "Shiori",
     "author": "Go-Shiori Team",
@@ -11,36 +11,33 @@
     },
 
     "permissions": [
-        "<all_urls>",
         "tabs",
         "storage",
         "bookmarks"
     ],
 
+    "host_permissions": [
+        "<all_urls>"
+    ],
+
     "background": {
-        "scripts": [
-            "js/browser-polyfill.js",
-            "js/background-script.js"
-        ]
+        //"service_worker": "js/background-script.js" // For Chrome
+        "scripts": ["js/background-script.js"] // For Firefox
     },
 
     "content_scripts": [{
         "matches": ["<all_urls>"],
         "css": ["css/dialog.css"],
         "js": [
-            "js/browser-polyfill.js",
             "js/content-script.js"
         ]
     }],
 
     "options_ui": {
-        "page": "view/options.html",
-        "browser_style": true,
-        "chrome_style": true
+        "page": "view/options.html"
     },
 
-    "browser_action": {
-        "browser_style": true,
+    "action": {
         "default_title": "Shiori",
         "default_popup": "view/popup.html",
         "default_icon": {
@@ -64,7 +61,7 @@
     },
 
     "commands": {
-        "_execute_browser_action": {
+        "_execute_action": {
             "suggested_key": {
                 "default": "Ctrl+Shift+F"
             },
@@ -74,7 +71,8 @@
 
     "browser_specific_settings": {
         "gecko": {
-            "id": "{8547b985-a7a0-408d-82d1-d185f8be1ff5}"
+            "id": "{8547b985-a7a0-408d-82d1-d185f8be1ff5}",
+            "strict_min_version": "109.0"
         }
     },
 

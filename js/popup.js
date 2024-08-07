@@ -6,7 +6,7 @@ var inputTags = document.getElementById("input-tags"),
     loading = document.getElementById("loading-sign");
 
 async function showError(err) {
-    var tabs = await browser.tabs.query({
+    var tabs = await chrome.tabs.query({
         currentWindow: true,
         active: true,
     });
@@ -19,7 +19,7 @@ async function showError(err) {
         err = err.message;
     }
 
-    return browser.tabs.sendMessage(tabs[0].id, {
+    return chrome.tabs.sendMessage(tabs[0].id, {
         type: "show-error",
         message: err,
     });
@@ -32,13 +32,13 @@ btnRemove.addEventListener("click", (e) => {
     loading.style.display = "block";
     btnRemove.style.display = "none";
 
-    browser.runtime.sendMessage({type: "remove-bookmark"})
+    chrome.runtime.sendMessage({type: "remove-bookmark"})
         .catch(err => showError(err))
         .finally(() => { window.close() });
 });
 
 btnLibraries.addEventListener("click", (e) => {
-    browser.runtime.sendMessage({type: "open-libraries"})
+    chrome.runtime.sendMessage({type: "open-libraries"})
         .finally(() => { window.close() });
 });
 
@@ -65,7 +65,7 @@ btnSave.addEventListener("click", (e) => {
         tags: tags,
     }
 
-    browser.runtime.sendMessage(message)
+    chrome.runtime.sendMessage(message)
         .catch(err => showError(err))
         .finally(() => window.close());
 });
